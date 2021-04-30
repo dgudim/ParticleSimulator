@@ -7,7 +7,9 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import static java.lang.Math.min;
@@ -17,6 +19,8 @@ public class GenericScreen implements Screen {
     OrthographicCamera camera;
     ScreenViewport viewport;
     SpriteBatch batch;
+    BitmapFont font;
+    final String fontChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890\"!`?'.,;:()[]{}<>|/@\\^$€-%+=#_&~*ёйцукенгшщзхъэждлорпавыфячсмитьбюЁЙЦУКЕНГШЩЗХЪЭЖДЛОРПАВЫФЯЧСМИТЬБЮ";
 
     float width, height;
 
@@ -29,6 +33,14 @@ public class GenericScreen implements Screen {
         camera = new OrthographicCamera(width, height);
         viewport = new ScreenViewport(camera);
         batch = new SpriteBatch();
+
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("font.ttf"));
+        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        parameter.size = 38;
+        parameter.characters = fontChars;
+        font = generator.generateFont(parameter);
+        generator.dispose();
+        font.getData().markupEnabled = true;
     }
 
     @Override
@@ -81,6 +93,7 @@ public class GenericScreen implements Screen {
 
     @Override
     public void dispose() {
-
+        batch.dispose();
+        font.dispose();
     }
 }

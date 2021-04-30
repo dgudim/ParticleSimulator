@@ -4,9 +4,7 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -20,13 +18,10 @@ import static com.deo.slime.Launcher.WIDTH;
 
 public class SettingsScreen extends GenericScreen {
 
-    final String fontChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890\"!`?'.,;:()[]{}<>|/@\\^$€-%+=#_&~*ёйцукенгшщзхъэждлорпавыфячсмитьбюЁЙЦУКЕНГШЩЗХЪЭЖДЛОРПАВЫФЯЧСМИТЬБЮ";
-
     Stage stage;
     ShapeRenderer shapeRenderer;
     float[] params;
     String paramsString = "";
-    BitmapFont font;
 
     Agent debugAgent = new Agent(true);
     float debugAgentRotation = 0;
@@ -39,14 +34,6 @@ public class SettingsScreen extends GenericScreen {
         debugAgent.turnSpeed = 0;
         debugAgent.maxPheromoneTrailConcentration = 0;
         debugAgent.pheromoneDepositRate = 0;
-
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("font.ttf"));
-        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        parameter.size = 38;
-        parameter.characters = fontChars;
-        font = generator.generateFont(parameter);
-        generator.dispose();
-        font.getData().markupEnabled = true;
 
         stage = new Stage(viewport, batch);
 
@@ -248,6 +235,8 @@ public class SettingsScreen extends GenericScreen {
 
     @Override
     public void dispose() {
-
+        font.dispose();
+        shapeRenderer.dispose();
+        stage.dispose();
     }
 }

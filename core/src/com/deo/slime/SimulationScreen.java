@@ -30,7 +30,9 @@ public class SimulationScreen extends GenericScreen {
     Texture gridTexture;
     final int numberOfAgents = 100000;
     int currentPalette = 0;
-    int currentSimulationRule = 13;
+    int currentSimulationRule_firstHalf = 13;
+    int currentSimulationRule_secondHalf = 13;
+    int currentlySelectedSimulationRule = 13;
 
     static float mapDivider = 1;
 
@@ -44,6 +46,8 @@ public class SimulationScreen extends GenericScreen {
 
     final boolean randomSpawn = true;
     float evaporationRate = 0.3f;
+
+    float maxTrailIntensity = 0;
 
     PostProcessor blurProcessor;
 
@@ -100,7 +104,7 @@ public class SimulationScreen extends GenericScreen {
         this.params = params;
 
         if (params == null) {
-            this.params = availableRules[currentSimulationRule];
+            this.params = availableRules[currentlySelectedSimulationRule];
         }
         changeParamsForAllAgents(this.params);
 
@@ -190,13 +194,23 @@ public class SimulationScreen extends GenericScreen {
             }
         }
 
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) {
+            currentSimulationRule_firstHalf = currentlySelectedSimulationRule;
+            changeParamsForHalfAgents(params, false);
+        }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
+            currentSimulationRule_secondHalf = currentlySelectedSimulationRule;
+            changeParamsForHalfAgents(params, true);
+        }
+
         if (Gdx.input.isKeyJustPressed(Input.Keys.W)) {
-            currentSimulationRule++;
+            currentlySelectedSimulationRule++;
             changeSimulationRules();
         }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.S)) {
-            currentSimulationRule--;
+            currentlySelectedSimulationRule--;
             changeSimulationRules();
         }
 
@@ -222,7 +236,7 @@ public class SimulationScreen extends GenericScreen {
         }
 
         if (bloom) {
-            blurProcessor.captureNoClear();
+            blurProcessor.capture();
         }
         batch.begin();
         gridTexture.draw(gridPixmap, 0, 0);
@@ -251,6 +265,10 @@ public class SimulationScreen extends GenericScreen {
             }
             frame++;
         }
+
+        batch.begin();
+        font.draw(batch, currentSimulationRule_firstHalf + "/" + currentSimulationRule_secondHalf + " [" + currentlySelectedSimulationRule + "] ", 30, 30);
+        batch.end();
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
             game.setScreen(new SettingsScreen(game, params));
@@ -326,18 +344,30 @@ public class SimulationScreen extends GenericScreen {
     }
 
     void changeSimulationRules() {
-        if (currentSimulationRule == availableRules.length) {
-            currentSimulationRule = 0;
+        if (currentlySelectedSimulationRule == availableRules.length) {
+            currentlySelectedSimulationRule = 0;
         }
-        if (currentSimulationRule == -1) {
-            currentSimulationRule = availableRules.length - 1;
+        if (currentlySelectedSimulationRule == -1) {
+            currentlySelectedSimulationRule = availableRules.length - 1;
         }
-        params = availableRules[currentSimulationRule];
-        changeParamsForAllAgents(availableRules[currentSimulationRule]);
+        params = availableRules[currentlySelectedSimulationRule];
     }
 
     void changeParamsForAllAgents(float[] params) {
-        for (Agent agent : agents) {
+        changeParamsForHalfAgents(params, false);
+        changeParamsForHalfAgents(params, true);
+        evaporationRate = params[8];
+    }
+
+    void changeParamsForHalfAgents(float[] params, boolean lastHalf) {
+        int start = 0;
+        int end = agents.length / 2;
+        if (lastHalf) {
+            start = end;
+            end = agents.length;
+        }
+        for (int i = start; i < end; i++) {
+            Agent agent = agents[i];
             agent.speed = params[0];
             agent.turnSpeed = params[1];
             agent.sensorLength = (int) params[2];
@@ -346,8 +376,14 @@ public class SimulationScreen extends GenericScreen {
             agent.sensorAngleOffset2 = (int) params[5];
             agent.maxPheromoneTrailConcentration = params[6];
             agent.pheromoneDepositRate = params[7];
+
         }
-        evaporationRate = params[8];
+        maxTrailIntensity = agents[0].maxPheromoneTrailConcentration;
+        for (Agent agent : agents) {
+            if (maxTrailIntensity < agent.maxPheromoneTrailConcentration) {
+                maxTrailIntensity = agent.maxPheromoneTrailConcentration;
+            }
+        }
     }
 
     @Override
@@ -372,8 +408,9 @@ public class SimulationScreen extends GenericScreen {
 
     @Override
     public void dispose() {
-        batch.dispose();
+        super.dispose();
         gridTexture.dispose();
         gridPixmap.dispose();
+        blurProcessor.dispose();
     }
 }

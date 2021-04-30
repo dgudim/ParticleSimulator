@@ -64,7 +64,7 @@ public class Agent {
         int start = 0;
         int target = sensorLength;
         if(sensorLength < 0){
-            start = sensorLength;
+            start = target;
             target = 0;
         }
 
