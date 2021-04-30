@@ -1,6 +1,5 @@
 package com.deo.slime;
 
-import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -77,16 +76,16 @@ public class SimulationScreen extends GenericScreen {
         init(game, trailMapWidth, trailMapHeight);
 
         ShaderLoader.BasePath = "shaders/";
-        blurProcessor = new PostProcessor(false, false, Gdx.app.getType() == Application.ApplicationType.Desktop);
-        Bloom bloom = new Bloom((int) (Gdx.graphics.getWidth() * 0.25f), (int) (Gdx.graphics.getHeight() * 0.25f));
+        blurProcessor = new PostProcessor(WIDTH, HEIGHT, false, false, true);
+        Bloom bloom = new Bloom(WIDTH, HEIGHT);
         bloom.setBlurPasses(3);
         bloom.setBloomIntensity(1f);
-        bloom.setBloomSaturation(1);
+        bloom.setBloomSaturation(1f);
         blurProcessor.addEffect(bloom);
 
         agents = new Agent[numberOfAgents];
         for (int i = 0; i < agents.length; i++) {
-            Agent newAgent = new Agent();
+            Agent newAgent = new Agent(false);
             if (randomSpawn) {
                 newAgent.x = (float) (trailMapWidth * random());
                 newAgent.y = (float) (trailMapHeight * random());
@@ -211,6 +210,15 @@ public class SimulationScreen extends GenericScreen {
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.J)) {
             showAgents = !showAgents;
+        }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
+            for (int i = 0; i < 250; i++) {
+                for (Agent agent : agents) {
+                    agent.update(relativeDelta);
+                }
+                fade();
+            }
         }
 
         if (bloom) {

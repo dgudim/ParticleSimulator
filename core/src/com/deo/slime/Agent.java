@@ -3,6 +3,8 @@ package com.deo.slime;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
+import java.util.ArrayList;
+
 import static com.badlogic.gdx.math.MathUtils.clamp;
 import static com.badlogic.gdx.math.MathUtils.random;
 import static com.deo.slime.SimulationScreen.getFromMap;
@@ -24,10 +26,17 @@ public class Agent {
     float maxPheromoneTrailConcentration = 1;
     float pheromoneDepositRate = 1;
 
+    ArrayList<Vector2> debugArray = new ArrayList<>();
+    boolean debug;
+
+    Agent(boolean debug){
+        this.debug = debug;
+    }
+
     void update(float deltaTime) {
 
-        x -= MathUtils.cosDeg(rotation) * speed * deltaTime;
-        y -= MathUtils.sinDeg(rotation) * speed * deltaTime;
+        x += MathUtils.cosDeg(rotation) * speed * deltaTime;
+        y += MathUtils.sinDeg(rotation) * speed * deltaTime;
         x = clamp(x, 0, trailMapWidth - 1);
         y = clamp(y, 0, trailMapHeight - 1);
         senseAndRotate(deltaTime);
@@ -42,22 +51,39 @@ public class Agent {
         float valueLeft = 0;
 
         Vector2 sensorStartLeft = new Vector2(
-                x - MathUtils.cosDeg(rotation - sensorAngleOffset) * sensorLengthOffset,
-                y - MathUtils.sinDeg(rotation - sensorAngleOffset) * sensorLengthOffset);
+                x + MathUtils.cosDeg(rotation - sensorAngleOffset) * sensorLengthOffset,
+                y + MathUtils.sinDeg(rotation - sensorAngleOffset) * sensorLengthOffset);
         Vector2 sensorStartRight = new Vector2(
-                x - MathUtils.cosDeg(rotation + sensorAngleOffset) * sensorLengthOffset,
-                y - MathUtils.sinDeg(rotation + sensorAngleOffset) * sensorLengthOffset);
+                x + MathUtils.cosDeg(rotation + sensorAngleOffset) * sensorLengthOffset,
+                y + MathUtils.sinDeg(rotation + sensorAngleOffset) * sensorLengthOffset);
 
-        for (int i = 0; i < sensorLength; i++) {
+        if(debug){
+            debugArray.clear();
+        }
 
-            int xForward = (int) (x - MathUtils.cosDeg(rotation) * (sensorLengthOffset + i));
-            int yForward = (int) (y - MathUtils.sinDeg(rotation) * (sensorLengthOffset + i));
+        int start = 0;
+        int target = sensorLength;
+        if(sensorLength < 0){
+            start = sensorLength;
+            target = 0;
+        }
 
-            int xRight = (int) (sensorStartRight.x - MathUtils.cosDeg(rotation + sensorAngleOffset + sensorAngleOffset2) * i);
-            int yRight = (int) (sensorStartRight.y - MathUtils.sinDeg(rotation + sensorAngleOffset + sensorAngleOffset2) * i);
+        for (int i = start; i < target; i++) {
 
-            int xLeft = (int) (sensorStartLeft.x - MathUtils.cosDeg(rotation - sensorAngleOffset - sensorAngleOffset2) * i);
-            int yLeft = (int) (sensorStartLeft.y - MathUtils.sinDeg(rotation - sensorAngleOffset - sensorAngleOffset2) * i);
+            int xForward = (int) (x + MathUtils.cosDeg(rotation) * (sensorLengthOffset + i));
+            int yForward = (int) (y + MathUtils.sinDeg(rotation) * (sensorLengthOffset + i));
+
+            int xRight = (int) (sensorStartRight.x + MathUtils.cosDeg(rotation + sensorAngleOffset + sensorAngleOffset2) * i);
+            int yRight = (int) (sensorStartRight.y + MathUtils.sinDeg(rotation + sensorAngleOffset + sensorAngleOffset2) * i);
+
+            int xLeft = (int) (sensorStartLeft.x + MathUtils.cosDeg(rotation - sensorAngleOffset - sensorAngleOffset2) * i);
+            int yLeft = (int) (sensorStartLeft.y + MathUtils.sinDeg(rotation - sensorAngleOffset - sensorAngleOffset2) * i);
+
+            if(debug) {
+                debugArray.add(new Vector2(xForward, yForward));
+                debugArray.add(new Vector2(xRight, yRight));
+                debugArray.add(new Vector2(xLeft, yLeft));
+            }
 
             xForward = clamp(xForward, 0, trailMapWidth - 1);
             xRight = clamp(xRight, 0, trailMapWidth - 1);

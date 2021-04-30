@@ -28,9 +28,17 @@ public class SettingsScreen extends GenericScreen {
     String paramsString = "";
     BitmapFont font;
 
+    Agent debugAgent = new Agent(true);
+    float debugAgentRotation = 0;
+
     SettingsScreen(Game game, float[] params) {
         init(game, WIDTH, HEIGHT);
         this.params = params;
+
+        debugAgent.speed = 0;
+        debugAgent.turnSpeed = 0;
+        debugAgent.maxPheromoneTrailConcentration = 0;
+        debugAgent.pheromoneDepositRate = 0;
 
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("font.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
@@ -67,6 +75,7 @@ public class SettingsScreen extends GenericScreen {
         Slider maxPheromoneTrailConcentration = new Slider(1, 100, 1, false, sliderStyle);
         Slider pheromoneDepositRate = new Slider(0.01f, 10, 0.01f, false, sliderStyle);
         Slider evaporationRate = new Slider(0.01f, 10, 0.01f, false, sliderStyle);
+        final Slider agentRotation = new Slider(0, 360, 1, false, sliderStyle);
 
         float start = 394;
         float step = 50;
@@ -80,6 +89,14 @@ public class SettingsScreen extends GenericScreen {
         maxPheromoneTrailConcentration.setBounds(3, start - step * 6, WIDTH / 2f - 6, 63);
         pheromoneDepositRate.setBounds(3, start - step * 7, WIDTH / 2f - 6, 63);
         evaporationRate.setBounds(3, start - step * 8, WIDTH / 2f - 6, 63);
+        agentRotation.setBounds(WIDTH / 4f - 200, HEIGHT - 35, 400, 30);
+
+        agentRotation.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                debugAgentRotation = agentRotation.getValue();
+            }
+        });
 
         addListenerToSlider(speed, 0);
         addListenerToSlider(turnSpeed, 1);
@@ -100,6 +117,7 @@ public class SettingsScreen extends GenericScreen {
         stage.addActor(maxPheromoneTrailConcentration);
         stage.addActor(pheromoneDepositRate);
         stage.addActor(evaporationRate);
+        stage.addActor(agentRotation);
 
         convertParamsToString();
     }
@@ -125,6 +143,10 @@ public class SettingsScreen extends GenericScreen {
                 "\n[#FFFF99]Max Pheromone Trail Concentration: [#77FF77]" + params[6] +
                 "\n[#FFFF99]Pheromone Deposit Rate: [#77FF77]" + params[7] +
                 "\n[#FFFF99]Evaporation Rate: [#77FF77]" + params[8];
+        debugAgent.sensorLength = (int) params[2];
+        debugAgent.sensorLengthOffset = (int) params[3];
+        debugAgent.sensorAngleOffset = (int) params[4];
+        debugAgent.sensorAngleOffset2 = (int) params[5];
     }
 
     @Override
@@ -140,6 +162,7 @@ public class SettingsScreen extends GenericScreen {
         shapeRenderer.setProjectionMatrix(camera.combined);
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(Color.WHITE);
         shapeRenderer.rectLine(WIDTH / 2f, 0f, WIDTH / 2f, HEIGHT, 5);
 
         shapeRenderer.setColor(Color.GRAY);
@@ -149,7 +172,6 @@ public class SettingsScreen extends GenericScreen {
         for (int i = 0; i < WIDTH / 2f; i += 30) {
             shapeRenderer.rectLine(i + 15, 0, i + 15, HEIGHT, 2 * camera.zoom);
         }
-        shapeRenderer.setColor(Color.WHITE);
 
         if (Gdx.input.isKeyPressed(Input.Keys.NUM_2)) {
             camera.zoom -= delta;
@@ -160,6 +182,17 @@ public class SettingsScreen extends GenericScreen {
 
         float xStart = WIDTH / 4f;
         float yStart = HEIGHT / 2f - 45;
+
+        debugAgent.senseAndRotate(delta);
+        debugAgent.x = 0;
+        debugAgent.y = 0;
+        debugAgent.rotation = debugAgentRotation + 90;
+        shapeRenderer.setColor(Color.SKY);
+        for (int i = 0; i < debugAgent.debugArray.size(); i++) {
+            drawBox(debugAgent.debugArray.get(i).x * 30 + xStart, debugAgent.debugArray.get(i).y * 30 + yStart, 30);
+        }
+        shapeRenderer.setColor(Color.WHITE);
+
         drawBox(xStart, yStart, 30);
         if (params[4] >= 0) {
             shapeRenderer.setColor(Color.CHARTREUSE);
@@ -168,14 +201,13 @@ public class SettingsScreen extends GenericScreen {
         }
 
         for (float i = 0; i < 3; i++) {
-            float yAStart = yStart + MathUtils.cosDeg(i * params[4] - params[4]) * (params[3] * 30 - 10);
-            float xAStart = xStart + MathUtils.sinDeg(i * params[4] - params[4]) * (params[3] * 30 - 10);
+            float yAStart = yStart + MathUtils.sinDeg(debugAgent.rotation + i * params[4] - params[4]) * (params[3] * 30 - 10);
+            float xAStart = xStart + MathUtils.cosDeg(debugAgent.rotation + i * params[4] - params[4]) * (params[3] * 30 - 10);
 
-            float yEnd = yAStart + MathUtils.cosDeg(i * params[4] - params[4] + i * params[5] - params[5]) * (params[2] * 30 - 10);
-            float xEnd = xAStart + MathUtils.sinDeg(i * params[4] - params[4] + i * params[5] - params[5]) * (params[2] * 30 - 10);
+            float yEnd = yAStart + MathUtils.sinDeg(debugAgent.rotation + i * params[4] - params[4] + i * params[5] - params[5]) * (params[2] * 30 - 10);
+            float xEnd = xAStart + MathUtils.cosDeg(debugAgent.rotation + i * params[4] - params[4] + i * params[5] - params[5]) * (params[2] * 30 - 10);
             shapeRenderer.rectLine(xAStart, yAStart, xEnd, yEnd, 3 * camera.zoom);
         }
-        shapeRenderer.setColor(Color.WHITE);
 
         shapeRenderer.end();
         batch.begin();
