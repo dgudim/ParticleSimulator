@@ -270,26 +270,13 @@ public class SimulationScreen extends GenericScreen {
     void fade() {
         for (int x = 1; x < trailMapWidth - 1; x++) {
             for (int y = 1; y < trailMapHeight - 1; y++) {
-
                 float sum = 0;
-
-                sum += getFromMap(x, y);
-
-                sum += getFromMap(x - 1, y);
-                sum += getFromMap(x + 1, y);
-
-                sum += getFromMap(x - 1, y - 1);
-                sum += getFromMap(x + 1, y + 1);
-
-                sum += getFromMap(x, y + 1);
-                sum += getFromMap(x, y - 1);
-
-                sum += getFromMap(x - 1, y + 1);
-                sum += getFromMap(x + 1, y - 1);
-
-                sum /= 9f;
-
-                gridPixmapColors[x][y] = sum;
+                for (int xOffset = -1; xOffset <= 1; ++xOffset) {
+                    for (int yOffset = -1; yOffset <= 1; ++yOffset) {
+                        sum += getFromMap(x + xOffset, y + yOffset);
+                    }
+                }
+                gridPixmapColors[x][y] = sum / 9f;
             }
         }
 
