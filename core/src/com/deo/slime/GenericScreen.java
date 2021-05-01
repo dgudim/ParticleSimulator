@@ -22,11 +22,11 @@ public class GenericScreen implements Screen {
     BitmapFont font;
     final String fontChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890\"!`?'.,;:()[]{}<>|/@\\^$€-%+=#_&~*ёйцукенгшщзхъэждлорпавыфячсмитьбюЁЙЦУКЕНГШЩЗХЪЭЖДЛОРПАВЫФЯЧСМИТЬБЮ";
 
-    float width, height;
+    int width, height;
 
     Game game;
 
-    void init(Game game, float width, float height) {
+    void init(Game game, int width, int height) {
         this.game = game;
         this.width = width;
         this.height = height;

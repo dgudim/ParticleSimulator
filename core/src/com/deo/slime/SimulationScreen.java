@@ -3,6 +3,7 @@ package com.deo.slime;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
@@ -36,8 +37,8 @@ public class SimulationScreen extends GenericScreen {
 
     static float mapDivider = 1;
 
-    static int trailMapHeight = (int) (HEIGHT / mapDivider);
-    static int trailMapWidth = (int) (WIDTH / mapDivider);
+    static int trailMapHeight;
+    static int trailMapWidth;
 
     int frame = 0;
     boolean recording = false;
@@ -51,7 +52,9 @@ public class SimulationScreen extends GenericScreen {
 
     PostProcessor blurProcessor;
 
-    final float[][] availableRules = new float[][]{
+    FileHandle externalParams;
+
+    float[][] availableRules = new float[][]{
             {2f, 50, 7, 2, 40, 0, 1, 1, 0.035f},
             {2f, 50, 9, 19, 50, 0, 1, 1, 0.035f},
             {3f, 92, 10, 102, 67, 0, 1, 1, 0.035f},
@@ -77,6 +80,12 @@ public class SimulationScreen extends GenericScreen {
             {Color.BLACK, Color.SKY, Color.BLACK, Color.BLACK, Color.TEAL, Color.BLACK}};
 
     SimulationScreen(Game game, float[] params) {
+        externalParams = Gdx.files.local("params.txt");
+
+        loadParams();
+        trailMapHeight = (int) (HEIGHT / mapDivider);
+        trailMapWidth = (int) (WIDTH / mapDivider);
+
         init(game, trailMapWidth, trailMapHeight);
 
         ShaderLoader.BasePath = "shaders/";
@@ -116,6 +125,29 @@ public class SimulationScreen extends GenericScreen {
     @Override
     public void show() {
 
+    }
+
+    void loadParams() {
+        if (!externalParams.exists()) {
+            externalParams.writeString("fieldSizeDivider_1", false);
+        }
+        String[] readParams = externalParams.readString().split("\r\n");
+        for (String param : readParams) {
+            if (param.startsWith("rule_")) {
+                String[] ruleParams = param.substring(5).split(",");
+                float[] newRule = new float[ruleParams.length];
+                for (int i = 0; i < ruleParams.length; i++) {
+                    newRule[i] = Float.parseFloat(ruleParams[i]);
+                }
+                float[][] newAvailableRules = new float[availableRules.length + 1][availableRules[0].length];
+                System.arraycopy(availableRules, 0, newAvailableRules, 0, availableRules.length);
+                newAvailableRules[availableRules.length] = newRule;
+                availableRules = newAvailableRules;
+            }
+            if (param.startsWith("fieldSizeDivider_")) {
+                mapDivider = Float.parseFloat(param.substring(17));
+            }
+        }
     }
 
     void spreadInCirce(int type) {
@@ -226,8 +258,8 @@ public class SimulationScreen extends GenericScreen {
             showAgents = !showAgents;
         }
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
-            for (int i = 0; i < 250; i++) {
+        if (Gdx.input.isKeyPressed(Input.Keys.F)) {
+            for (int i = 0; i < 5; i++) {
                 for (Agent agent : agents) {
                     agent.update(relativeDelta);
                 }
@@ -311,8 +343,8 @@ public class SimulationScreen extends GenericScreen {
 
                 switch (currentPalette) {
                     case (0):
-                        float ratio1 = (gridPixmapColors[x][y] - params[6] / 2f) * 2;
-                        float ratio2 = (ratio1 - gridPixmapColors[x][y]) * 2;
+                        float ratio1 = (gridPixmapColors[x][y] - maxTrailIntensity / 2f) * 2;
+                        float ratio2 = (ratio1 - gridPixmapColors[x][y] / maxTrailIntensity) * 2;
                         Color c1 = new Color(mixTwoColors(Color.SLATE, Color.WHITE, ratio1));
                         gridPixmap.drawPixel(x, y, mixTwoColors(c1, Color.CORAL, ratio2));
                         break;
@@ -320,13 +352,13 @@ public class SimulationScreen extends GenericScreen {
                         gridPixmap.drawPixel(x, y,
                                 mixTwoColors(
                                         new Color(interpolate(
-                                                gridPixmapColors[x][y], params[6],
+                                                gridPixmapColors[x][y], maxTrailIntensity,
                                                 Color.BLACK, Color.ROYAL,
                                                 Color.ROYAL, Color.CYAN,
                                                 Color.WHITE)),
                                         new Color(mixTwoColors(
                                                 Color.LIGHT_GRAY,
-                                                Color.BLACK, 1 - gridPixmapColors[x][y])), gridPixmapColors[x][y]));
+                                                Color.BLACK, 1 - gridPixmapColors[x][y] / maxTrailIntensity)), gridPixmapColors[x][y] / maxTrailIntensity));
                         break;
                     default:
                         if (currentPalette == -1) {
@@ -335,7 +367,7 @@ public class SimulationScreen extends GenericScreen {
                         if (currentPalette - 2 == availablePalettes.length) {
                             currentPalette = 0;
                         } else {
-                            gridPixmap.drawPixel(x, y, interpolate(gridPixmapColors[x][y], params[6], availablePalettes[currentPalette - 2]));
+                            gridPixmap.drawPixel(x, y, interpolate(gridPixmapColors[x][y], maxTrailIntensity, availablePalettes[currentPalette - 2]));
                         }
                         break;
                 }
@@ -380,9 +412,7 @@ public class SimulationScreen extends GenericScreen {
         }
         maxTrailIntensity = agents[0].maxPheromoneTrailConcentration;
         for (Agent agent : agents) {
-            if (maxTrailIntensity < agent.maxPheromoneTrailConcentration) {
-                maxTrailIntensity = agent.maxPheromoneTrailConcentration;
-            }
+            maxTrailIntensity = max(maxTrailIntensity, agent.maxPheromoneTrailConcentration);
         }
     }
 
