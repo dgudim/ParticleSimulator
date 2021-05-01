@@ -1,0 +1,2 @@
+fieldSizeDivider_1
+rule_20,50,70,20,40,0,10,10,0.35
